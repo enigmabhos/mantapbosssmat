@@ -60,6 +60,33 @@
             overflow-y: auto;
             margin-top: 15px;
         }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            background: #1a1a1a;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border-left: 3px solid #00ffcc;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #00ff00;
+        }
+
+        .running {
+            color: #00ff00;
+        }
+
+        .stopped {
+            color: #ff4444;
+        }
     </style>
 </head>
 
@@ -72,20 +99,42 @@
     <p id="statusLog">🕓 Menunggu perintah...</p>
 
     <div id="stats" style="margin-top: 10px; line-height: 1.6;">
-        <p>Total Requests: <span id="total">0</span></p>
-        <p>✅ Success: <span id="success">0</span></p>
-        <p>❌ Failed: <span id="failed">0</span></p>
-        <p>📈 Success Rate: <span id="successRate">0%</span></p>
-        <p>📉 Failed Rate: <span id="failedRate">0%</span></p>
-        <p>📡 Avg Response Time: <span id="avgResponse">0 ms</span></p>
-        <p>⏱ Last Response Time: <span id="lastResponse">-</span></p>
-        <p>🕒 Elapsed Time: <span id="elapsed">0s</span></p>
-        <p>👤 Last Username: <span id="lastUser">-</span></p>
-        <p>🔗 Last URL: <span id="lastURL">-</span></p>
-        <p>Status Request: <span id="requestStatus">🔴 Request stopped</span></p>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div>Total Requests: <span id="total" class="stat-value">0</span></div>
+            </div>
+            <div class="stat-item">
+                <div>✅ Success: <span id="success" class="stat-value">0</span></div>
+            </div>
+            <div class="stat-item">
+                <div>❌ Failed: <span id="failed" class="stat-value">0</span></div>
+            </div>
+            <div class="stat-item">
+                <div>✅ Success Rate: <span id="successRate" class="stat-value">0%</span></div>
+            </div>
+            <div class="stat-item">
+                <div>❌ Failed Rate: <span id="failedRate" class="stat-value">0%</span></div>
+            </div>
+            <div class="stat-item">
+                <div>⚡ Avg Response Time: <span id="avgResponseTime" class="stat-value">0ms</span></div>
+            </div>
+            <div class="stat-item">
+                <div>🕒 Last Response Time: <span id="lastResponseTime" class="stat-value">0ms</span></div>
+            </div>
+            <div class="stat-item">
+                <div>⏱ Elapsed Time: <span id="elapsedTime" class="stat-value">0s</span></div>
+            </div>
+            <div class="stat-item">
+                <div>👤 Last Username: <span id="lastUsername" class="stat-value">-</span></div>
+            </div>
+            <div class="stat-item">
+                <div>🔗 Last URL: <span id="lastUrl" class="stat-value">-</span></div>
+            </div>
+            <div class="stat-item" style="grid-column: 1 / -1;">
+                <div>Status Request: <span id="requestStatus" class="stat-value stopped">🔴 Request stopped</span></div>
+            </div>
+        </div>
     </div>
-
-
 
     <div id="logContainer"></div>
 
@@ -94,6 +143,12 @@
         let totalRequests = 0;
         let successCount = 0;
         let failedCount = 0;
+        let totalResponseTime = 0;
+        let lastResponseTime = 0;
+        let startTime = null;
+        let elapsedInterval = null;
+        let lastUsername = '-';
+        let lastUrl = '-';
 
         function updateStats() {
             document.getElementById("total").innerText = totalRequests;
@@ -102,13 +157,73 @@
 
             const successRate = totalRequests > 0 ? ((successCount / totalRequests) * 100).toFixed(1) : 0;
             const failedRate = totalRequests > 0 ? ((failedCount / totalRequests) * 100).toFixed(1) : 0;
+            const avgResponseTime = totalRequests > 0 ? Math.round(totalResponseTime / totalRequests) : 0;
 
             document.getElementById("successRate").innerText = `${successRate}%`;
             document.getElementById("failedRate").innerText = `${failedRate}%`;
+            document.getElementById("avgResponseTime").innerText = `${avgResponseTime}ms`;
+            document.getElementById("lastResponseTime").innerText = `${lastResponseTime}ms`;
+            document.getElementById("lastUsername").innerText = lastUsername;
+            document.getElementById("lastUrl").innerText = lastUrl.length > 50 ? lastUrl.substring(0, 50) + '...' : lastUrl;
         }
 
+        function updateElapsedTime() {
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById("elapsedTime").innerText = `${elapsed}s`;
+            }
+        }
 
         function generateRandomUsername() {
+            const prefix = [
+                // Original prefixes
+                "aku", "si", "the", "dark", "super", "ultra", "om", "pak", "bang", "ratu", "nona",
+
+                // Indonesian titles/honorifics
+                "mas", "mbak", "kakak", "adik", "bude", "uwak", "tante", "paman", "nenek", "kakek",
+                "bapak", "ibu", "abang", "kakang", "dek", "kang", "nyai", "kyai", "haji", "hajah",
+
+                // Gaming/cool prefixes
+                "pro", "noob", "epic", "mega", "hyper", "turbo", "cyber", "shadow", "ghost", "ninja",
+                "master", "lord", "king", "queen", "prince", "boss", "chief", "commander", "captain",
+                "legend", "immortal", "divine", "mystic", "cosmic", "quantum", "atomic", "nuclear",
+
+                // Colors in Indonesian
+                "merah", "biru", "hijau", "kuning", "hitam", "putih", "ungu", "orange", "pink", "abu",
+
+                // Animals in Indonesian
+                "kucing", "anjing", "burung", "ikan", "naga", "harimau", "singa", "elang", "ular", "kuda",
+                "gajah", "monyet", "kerbau", "ayam", "bebek", "kambing", "sapi", "domba", "kelinci",
+
+                // Elements/Nature
+                "api", "air", "tanah", "angin", "petir", "kilat", "guntur", "hujan", "salju", "es",
+                "batu", "logam", "kayu", "daun", "bunga", "pohon", "gunung", "laut", "sungai",
+
+                // Technology/Modern
+                "cyber", "digital", "virtual", "online", "web", "net", "tech", "bot", "ai", "robot",
+                "data", "code", "hack", "pixel", "byte", "wifi", "nano", "micro", "macro",
+
+                // Emotions/Characteristics
+                "keren", "ganteng", "cantik", "pintar", "cerdas", "kuat", "berani", "hebat", "jagoan",
+                "gahar", "brutal", "sadis", "gentle", "baik", "ramah", "cool", "hot", "fresh",
+
+                // Mythical/Fantasy
+                "dewa", "dewi", "malaikat", "iblis", "jin", "raksasa", "peri", "unicorn", "phoenix",
+                "dragon", "titan", "god", "goddess", "angel", "demon", "spirit", "soul",
+
+                // Time/Speed
+                "cepat", "kilat", "lambat", "lama", "baru", "tua", "muda", "pagi", "siang", "malam",
+                "dini", "akhir", "awal", "tengah", "speed", "slow", "fast", "quick", "rapid",
+
+                // Numbers/Math
+                "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
+                "ratus", "ribu", "juta", "milyar", "infinity", "zero", "double", "triple", "quad",
+
+                // Gaming terms
+                "player", "gamer", "streamer", "youtuber", "tiktoker", "blogger", "vlogger", "content",
+                "subscriber", "follower", "viewer", "fan", "hater", "lover", "fighter", "warrior"
+            ];
+
             const suffix = [
                 // Original suffixes
                 "hitam", "merah", "kucing", "shadow", "sultan", "naga", "petir", "bot", "cepat", "legend",
@@ -185,65 +300,7 @@
                 // Random cool suffixes
                 "x", "z", "v", "killer", "destroyer", "slayer", "breaker", "maker", "hunter", "seeker",
                 "finder", "keeper", "guardian", "protector", "defender", "attacker", "striker", "fighter",
-                "rider", "walker", "runner", "jumper", "flyer", "swimmer", "climber", "crawler",
-
-                // NEW ADDITIONS:
-                // Mythical & Fantasy
-                "yokai", "oni", "kitsune", "valkyrie", "djinn", "banshee", "yeti", "siren", "baphomet",
-                "cerberus", "golem", "chimera", "leviathan", "behemoth", "wendigo", "jinn", "ifrit", "marid",
-
-                // Sci-Fi & Futuristic
-                "cyborg", "android", "hologram", "quantum", "singularity", "nebula", "cosmos", "void", "astral",
-                "stellar", "lunar", "solar", "plasma", "ion", "photon", "neutron", "exo", "mecha", "nanotech",
-
-                // Martial Arts & Combat
-                "kungfu", "taekwondo", "karate", "jiujitsu", "muaythai", "boxer", "wrestler", "samurai", "ninjutsu",
-                "kendo", "capoeira", "savate", "kravmaga", "sumo", "fencing", "gladiator", "berserker", "ronin",
-
-                // Music & Arts
-                "rock", "metal", "jazz", "blues", "punk", "emo", "rap", "hiphop", "dubstep", "techno",
-                "classic", "symphony", "opera", "ballad", "trumpet", "violin", "guitar", "drummer", "pianist",
-                "artist", "painter", "sculptor", "poet", "writer", "author", "director", "actor", "singer",
-
-                // Space & Astronomy
-                "galactic", "interstellar", "cosmic", "orbital", "comet", "asteroid", "meteor", "blackhole", "wormhole",
-                "supernova", "pulsar", "quasar", "alien", "ufo", "extraterrestrial", "mars", "jupiter", "saturn",
-
-                // Weather & Natural Phenomena
-                "typhoon", "hurricane", "blizzard", "avalanche", "earthquake", "volcano", "lightning", "thunderstorm",
-                "monsoon", "drought", "flood", "whirlwind", "tornado", "cyclone", "sunshine", "moonlight", "starlight",
-
-                // Vehicles & Machines
-                "tank", "fighterjet", "spaceship", "submarine", "motorcycle", "formula", "drift", "rally", "airship",
-                "locomotive", "helicopter", "battleship", "cruiser", "destroyer", "bomber", "stealth", "supersonic",
-
-                // Food & Drinks
-                "ramen", "sushi", "burger", "pizza", "taco", "noodle", "coffee", "milkshake", "soda", "whiskey",
-                "vodka", "tequila", "chocolate", "caramel", "vanilla", "strawberry", "banana", "mango", "durian",
-
-                // Emotions & Personality
-                "chaotic", "neutral", "evil", "good", "loyal", "rebel", "fearless", "timid", "optimist", "pessimist",
-                "introvert", "extrovert", "ambivert", "genius", "wise", "foolish", "crazy", "insane", "psycho",
-
-                // Historical & Medieval
-                "viking", "spartan", "gladiator", "knight", "paladin", "crusader", "samurai", "shogun", "ninja",
-                "pirate", "corsair", "barbarian", "pharaoh", "monarch", "emperor", "caesar", "napoleon", "alexander",
-
-                // Magic & Supernatural
-                "arcane", "mystic", "enchant", "sorcery", "witchcraft", "necromancer", "illusion", "alchemy", "runemaster",
-                "hex", "curse", "blessing", "prophet", "oracle", "seer", "diviner", "shapeshifter", "telepath",
-
-                // Jobs & Professions
-                "doctor", "engineer", "scientist", "detective", "spy", "agent", "merchant", "blacksmith", "alchemist",
-                "farmer", "fisherman", "hunter", "explorer", "archaeologist", "astronaut", "pilot", "captain", "admiral",
-
-                // Abstract Concepts
-                "destiny", "fate", "karma", "nirvana", "zen", "harmony", "balance", "justice", "freedom",
-                "wisdom", "knowledge", "power", "strength", "courage", "honor", "glory", "victory", "defeat",
-
-                // Random Cool Words
-                "vortex", "abyss", "echo", "phantom", "specter", "wraith", "reaper", "doom", "apocalypse",
-                "infinity", "eternity", "paradox", "enigma", "riddle", "mystery", "legend", "myth", "folklore"
+                "rider", "walker", "runner", "jumper", "flyer", "swimmer", "climber", "crawler"
             ];
             const selectedPrefix = prefix[Math.floor(Math.random() * prefix.length)];
             const selectedSuffix = suffix[Math.floor(Math.random() * suffix.length)];
@@ -251,27 +308,46 @@
             return selectedPrefix + selectedSuffix;
         }
 
-
         function sendRequest() {
             const username = generateRandomUsername();
             const url = `https://matzzxz.vercel.app/api/pterodactyl/create?username=${username}`;
-            totalRequests++;
+            const requestStartTime = Date.now();
+
+            // Update last username and URL immediately
+            lastUsername = username;
+            lastUrl = url;
 
             fetch(url)
-                .then(response => response.json())
+                .then(response => {
+                    const responseTime = Date.now() - requestStartTime;
+                    lastResponseTime = responseTime;
+                    totalResponseTime += responseTime;
+
+                    return response.json();
+                })
                 .then(data => {
+                    totalRequests++;
+
                     const resultStr = JSON.stringify(data).toLowerCase();
                     const isSuccess = resultStr.includes("success") || resultStr.includes("created") || data?.status;
 
-                    if (isSuccess) successCount++;
-                    else failedCount++;
+                    if (isSuccess) {
+                        successCount++;
+                    } else {
+                        failedCount++;
+                    }
+
+                    // Update statistics
+                    updateStats();
 
                     const logCard = document.createElement('div');
                     logCard.className = `card ${isSuccess ? 'success' : 'failed'}`;
-                    let logText = `${isSuccess ? '✅ SUCCESS' : '❌ FAILED'} → ${username}`;
 
+                    let logText = `${isSuccess ? '✅ SUCCESS' : '❌ FAILED'} → ${username} (${lastResponseTime}ms)`;
+
+                    // Tambahkan blok JSON jika status true
                     if (isSuccess && data?.result) {
-                        const formatted = JSON.stringify(data, null, 2);
+                        const formatted = JSON.stringify(data, null, 2); // format biar rapi
                         const pre = document.createElement('pre');
                         pre.style.color = '#ccc';
                         pre.style.marginTop = '6px';
@@ -286,68 +362,62 @@
 
                     document.getElementById("logContainer").prepend(logCard);
                     document.getElementById("statusLog").innerText = `Terkirim: ${url}`;
-                    updateStats();
                 })
                 .catch(error => {
+                    totalRequests++;
                     failedCount++;
+
+                    const responseTime = Date.now() - requestStartTime;
+                    lastResponseTime = responseTime;
+                    totalResponseTime += responseTime;
+
+                    // Update statistics
+                    updateStats();
+
                     const logCard = document.createElement('div');
                     logCard.className = "card failed";
-                    logCard.innerText = `❌ ERROR → ${username} | ${error.message}`;
+                    logCard.innerText = `❌ ERROR → ${username} (${lastResponseTime}ms) | ${error.message}`;
 
                     document.getElementById("logContainer").prepend(logCard);
                     document.getElementById("statusLog").innerText = `Gagal: ${url}`;
-                    updateStats();
                 });
         }
-
 
         function start() {
             const delay = parseInt(document.getElementById("delayInput").value);
             if (intervalId) clearInterval(intervalId);
+            if (elapsedInterval) clearInterval(elapsedInterval);
+
+            // Reset start time and begin elapsed time tracking
+            startTime = Date.now();
+            elapsedInterval = setInterval(updateElapsedTime, 1000);
+
             intervalId = setInterval(sendRequest, Math.max(0, delay));
+
+            // Update status
+            const statusElement = document.getElementById("requestStatus");
+            statusElement.innerText = "🟢 Request running";
+            statusElement.className = "stat-value running";
+
             document.getElementById("statusLog").innerText = `▶️ Dimulai dengan delay ${delay}ms...`;
         }
 
         function stop() {
             clearInterval(intervalId);
+            clearInterval(elapsedInterval);
             intervalId = null;
+            elapsedInterval = null;
+
+            // Update status
+            const statusElement = document.getElementById("requestStatus");
+            statusElement.innerText = "🔴 Request stopped";
+            statusElement.className = "stat-value stopped";
+
             document.getElementById("statusLog").innerText = "⛔ Dihentikan.";
         }
 
-        window.onload = () => {
-            const saved = localStorage.getItem("autoRequestData");
-            if (!saved) return;
-
-            const data = JSON.parse(saved);
-            if (data.running) {
-                // Tampilkan data log & stats kembali
-                Object.assign(window, data);
-                document.getElementById("logContainer").innerHTML = data.logHTML || "";
-                // Restore UI
-                document.getElementById("requestStatus").innerText = "🟢 Sending request";
-                document.getElementById("statusLog").innerText = "▶️ Dilanjutkan...";
-                // Lanjutkan interval
-                intervalId = setInterval(sendRequest, parseInt(document.getElementById("delayInput").value));
-                // Mulai timer durasi
-                setInterval(updateElapsedTime, 1000);
-                updateStats();
-            }
-
-            localStorage.setItem("autoRequestData", JSON.stringify({
-                running: true / false,
-                startedAt: timestamp,
-                total: n,
-                success: n,
-                failed: n,
-                totalResponseTime: ms,
-                maxResponseTime: ms,
-                minResponseTime: ms,
-                lastUsername: "xxx",
-                logHTML: document.getElementById("logContainer").innerHTML
-            }))
-
-        };
-
+        // Initialize stats on page load
+        updateStats();
     </script>
 </body>
 
