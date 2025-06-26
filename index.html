@@ -174,139 +174,17 @@
             }
         }
 
-        function generateRandomUsername() {
-            const prefix = [
-                // Original prefixes
-                "aku", "si", "the", "dark", "super", "ultra", "om", "pak", "bang", "ratu", "nona",
+       function generateRandomUsername() {
+    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const length = Math.floor(Math.random() * 6) + 7; // panjang antara 7 hingga 12 karakter
+    let username = '';
+    for (let i = 0; i < length; i++) {
+        username += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return username;
+}
 
-                // Indonesian titles/honorifics
-                "mas", "mbak", "kakak", "adik", "bude", "uwak", "tante", "paman", "nenek", "kakek",
-                "bapak", "ibu", "abang", "kakang", "dek", "kang", "nyai", "kyai", "haji", "hajah",
 
-                // Gaming/cool prefixes
-                "pro", "noob", "epic", "mega", "hyper", "turbo", "cyber", "shadow", "ghost", "ninja",
-                "master", "lord", "king", "queen", "prince", "boss", "chief", "commander", "captain",
-                "legend", "immortal", "divine", "mystic", "cosmic", "quantum", "atomic", "nuclear",
-
-                // Colors in Indonesian
-                "merah", "biru", "hijau", "kuning", "hitam", "putih", "ungu", "orange", "pink", "abu",
-
-                // Animals in Indonesian
-                "kucing", "anjing", "burung", "ikan", "naga", "harimau", "singa", "elang", "ular", "kuda",
-                "gajah", "monyet", "kerbau", "ayam", "bebek", "kambing", "sapi", "domba", "kelinci",
-
-                // Elements/Nature
-                "api", "air", "tanah", "angin", "petir", "kilat", "guntur", "hujan", "salju", "es",
-                "batu", "logam", "kayu", "daun", "bunga", "pohon", "gunung", "laut", "sungai",
-
-                // Technology/Modern
-                "cyber", "digital", "virtual", "online", "web", "net", "tech", "bot", "ai", "robot",
-                "data", "code", "hack", "pixel", "byte", "wifi", "nano", "micro", "macro",
-
-                // Emotions/Characteristics
-                "keren", "ganteng", "cantik", "pintar", "cerdas", "kuat", "berani", "hebat", "jagoan",
-                "gahar", "brutal", "sadis", "gentle", "baik", "ramah", "cool", "hot", "fresh",
-
-                // Mythical/Fantasy
-                "dewa", "dewi", "malaikat", "iblis", "jin", "raksasa", "peri", "unicorn", "phoenix",
-                "dragon", "titan", "god", "goddess", "angel", "demon", "spirit", "soul",
-
-                // Time/Speed
-                "cepat", "kilat", "lambat", "lama", "baru", "tua", "muda", "pagi", "siang", "malam",
-                "dini", "akhir", "awal", "tengah", "speed", "slow", "fast", "quick", "rapid",
-
-                // Numbers/Math
-                "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
-                "ratus", "ribu", "juta", "milyar", "infinity", "zero", "double", "triple", "quad",
-
-                // Gaming terms
-                "player", "gamer", "streamer", "youtuber", "tiktoker", "blogger", "vlogger", "content",
-                "subscriber", "follower", "viewer", "fan", "hater", "lover", "fighter", "warrior"
-            ];
-
-            const suffix = [
-                // Original suffixes
-                "hitam", "merah", "kucing", "shadow", "sultan", "naga", "petir", "bot", "cepat", "legend",
-
-                // Colors
-                "biru", "hijau", "kuning", "putih", "ungu", "orange", "pink", "abu", "emas", "perak",
-                "coklat", "cream", "violet", "indigo", "cyan", "magenta", "bronze", "platinum",
-
-                // Animals
-                "harimau", "singa", "elang", "ular", "kuda", "gajah", "monyet", "serigala", "beruang",
-                "rusa", "kelinci", "ayam", "bebek", "ikan", "lumba", "paus", "hiu", "burung", "gagak",
-                "merpati", "rajawali", "kobra", "python", "cheetah", "leopard", "panther", "lion",
-
-                // Elements/Nature
-                "api", "air", "angin", "tanah", "es", "salju", "hujan", "badai", "topan", "gempa",
-                "vulkan", "lava", "kristal", "berlian", "batu", "besi", "baja", "titanium", "plasma",
-                "laser", "thunder", "storm", "blizzard", "tornado", "tsunami", "meteor", "comet",
-
-                // Weapons/Combat
-                "pedang", "pisau", "panah", "tombak", "kapak", "palu", "cambuk", "katana", "samurai",
-                "ninja", "blade", "sword", "dagger", "spear", "hammer", "axe", "bow", "gun", "rifle",
-                "cannon", "missile", "bomb", "grenade", "destroyer", "killer", "slayer", "hunter",
-
-                // Gaming/Tech
-                "gamer", "player", "hacker", "coder", "programmer", "developer", "designer", "creator",
-                "builder", "maker", "crafter", "miner", "farmer", "trader", "warrior", "mage", "archer",
-                "tank", "healer", "support", "carry", "jungler", "mid", "top", "adc", "support",
-
-                // Titles/Ranks
-                "master", "lord", "king", "prince", "duke", "baron", "knight", "paladin", "crusader",
-                "champion", "hero", "villain", "boss", "chief", "captain", "general", "admiral",
-                "commander", "sergeant", "rookie", "veteran", "elite", "pro", "noob", "newbie",
-
-                // Mythical/Fantasy
-                "dragon", "phoenix", "unicorn", "griffin", "kraken", "hydra", "sphinx", "minotaur",
-                "centaur", "pegasus", "demon", "angel", "spirit", "ghost", "phantom", "wraith",
-                "vampire", "werewolf", "zombie", "witch", "wizard", "sorcerer", "warlock", "shaman",
-
-                // Characteristics/Adjectives
-                "kuat", "lemah", "pintar", "bodoh", "cepat", "lambat", "besar", "kecil", "tinggi", "pendek",
-                "ganteng", "jelek", "cantik", "buruk", "baik", "jahat", "berani", "penakut", "rajin", "malas",
-                "keren", "norak", "gaul", "jadul", "modern", "klasik", "epic", "fail", "win", "lose",
-
-                // Time/Age
-                "muda", "tua", "baru", "lama", "pagi", "siang", "sore", "malam", "dini", "akhir",
-                "awal", "tengah", "kemarin", "besok", "sekarang", "dulu", "nanti", "永远", "forever",
-
-                // Numbers
-                "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
-                "sebelas", "duabelas", "tigabelas", "empat belas", "limabelas", "ratus", "ribu", "juta",
-                "milyar", "trillion", "infinity", "zero", "double", "triple", "quad", "penta", "hexa",
-
-                // Body parts
-                "mata", "hidung", "mulut", "telinga", "tangan", "kaki", "kepala", "rambut", "gigi",
-                "lidah", "jari", "kuku", "kulit", "tulang", "otot", "jantung", "otak", "soul", "heart",
-
-                // Food/Drink
-                "nasi", "mie", "roti", "kue", "permen", "coklat", "kopi", "teh", "susu", "jus",
-                "pizza", "burger", "sushi", "curry", "soup", "salad", "cake", "cookie", "candy",
-
-                // Places
-                "kota", "desa", "gunung", "laut", "sungai", "danau", "hutan", "padang", "pantai", "pulau",
-                "benua", "planet", "bintang", "galaxy", "universe", "dimension", "realm", "kingdom",
-                "empire", "nation", "world", "earth", "heaven", "hell", "paradise", "wasteland",
-
-                // Emotions
-                "senang", "sedih", "marah", "takut", "benci", "cinta", "rindu", "kangen", "bangga",
-                "malu", "kecewa", "surprised", "shocked", "amazed", "confused", "worried", "excited",
-
-                // Internet/Social Media
-                "viral", "trending", "famous", "popular", "subscriber", "follower", "like", "comment",
-                "share", "upload", "download", "stream", "live", "offline", "online", "digital",
-
-                // Random cool suffixes
-                "x", "z", "v", "killer", "destroyer", "slayer", "breaker", "maker", "hunter", "seeker",
-                "finder", "keeper", "guardian", "protector", "defender", "attacker", "striker", "fighter",
-                "rider", "walker", "runner", "jumper", "flyer", "swimmer", "climber", "crawler"
-            ];
-            const selectedPrefix = prefix[Math.floor(Math.random() * prefix.length)];
-            const selectedSuffix = suffix[Math.floor(Math.random() * suffix.length)];
-
-            return selectedPrefix + selectedSuffix;
-        }
 
         function sendRequest() {
             const username = generateRandomUsername();
