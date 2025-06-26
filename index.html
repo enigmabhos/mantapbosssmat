@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Auto Request Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #121212;
+            color: #00ffcc;
+            padding: 20px;
+        }
+
+        input,
+        button {
+            padding: 8px 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input {
+            background: #222;
+            color: #0f0;
+            width: 100px;
+        }
+
+        button {
+            background: #1e1e1e;
+            color: white;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .card {
+            background: #1a1a1a;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-left: 5px solid #00ffcc;
+            border-radius: 6px;
+            color: white;
+        }
+
+        .success {
+            border-color: #00ff00;
+        }
+
+        .failed {
+            border-color: #ff4444;
+        }
+
+        #logContainer {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>⚙️ Auto Request Generator</h2>
+    <label>⏱ Delay antar request (ms):</label>
+    <input type="number" id="delayInput" value="100" min="0"><br>
+    <button onclick="start()">🟢 Start</button>
+    <button onclick="stop()">🔴 Stop</button>
+    <p id="statusLog">🕓 Menunggu perintah...</p>
+
+    <div id="stats" style="margin-top: 10px; line-height: 1.6;">
+        <p>Total Requests: <span id="total">0</span></p>
+        <p>✅ Success: <span id="success">0</span></p>
+        <p>❌ Failed: <span id="failed">0</span></p>
+        <p>📈 Success Rate: <span id="successRate">0%</span></p>
+        <p>📉 Failed Rate: <span id="failedRate">0%</span></p>
+        <p>📡 Avg Response Time: <span id="avgResponse">0 ms</span></p>
+        <p>⏱ Last Response Time: <span id="lastResponse">-</span></p>
+        <p>🕒 Elapsed Time: <span id="elapsed">0s</span></p>
+        <p>👤 Last Username: <span id="lastUser">-</span></p>
+        <p>🔗 Last URL: <span id="lastURL">-</span></p>
+        <p>Status Request: <span id="requestStatus">🔴 Request stopped</span></p>
+    </div>
+
+
+
+    <div id="logContainer"></div>
+
+    <script>
+        let intervalId = null;
+        let totalRequests = 0;
+        let successCount = 0;
+        let failedCount = 0;
+
+        function updateStats() {
+            document.getElementById("total").innerText = totalRequests;
+            document.getElementById("success").innerText = successCount;
+            document.getElementById("failed").innerText = failedCount;
+
+            const successRate = totalRequests > 0 ? ((successCount / totalRequests) * 100).toFixed(1) : 0;
+            const failedRate = totalRequests > 0 ? ((failedCount / totalRequests) * 100).toFixed(1) : 0;
+
+            document.getElementById("successRate").innerText = `${successRate}%`;
+            document.getElementById("failedRate").innerText = `${failedRate}%`;
+        }
+
+
+        function generateRandomUsername() {
+            const suffix = [
+                // Original suffixes
+                "hitam", "merah", "kucing", "shadow", "sultan", "naga", "petir", "bot", "cepat", "legend",
+
+                // Colors
+                "biru", "hijau", "kuning", "putih", "ungu", "orange", "pink", "abu", "emas", "perak",
+                "coklat", "cream", "violet", "indigo", "cyan", "magenta", "bronze", "platinum",
+
+                // Animals
+                "harimau", "singa", "elang", "ular", "kuda", "gajah", "monyet", "serigala", "beruang",
+                "rusa", "kelinci", "ayam", "bebek", "ikan", "lumba", "paus", "hiu", "burung", "gagak",
+                "merpati", "rajawali", "kobra", "python", "cheetah", "leopard", "panther", "lion",
+
+                // Elements/Nature
+                "api", "air", "angin", "tanah", "es", "salju", "hujan", "badai", "topan", "gempa",
+                "vulkan", "lava", "kristal", "berlian", "batu", "besi", "baja", "titanium", "plasma",
+                "laser", "thunder", "storm", "blizzard", "tornado", "tsunami", "meteor", "comet",
+
+                // Weapons/Combat
+                "pedang", "pisau", "panah", "tombak", "kapak", "palu", "cambuk", "katana", "samurai",
+                "ninja", "blade", "sword", "dagger", "spear", "hammer", "axe", "bow", "gun", "rifle",
+                "cannon", "missile", "bomb", "grenade", "destroyer", "killer", "slayer", "hunter",
+
+                // Gaming/Tech
+                "gamer", "player", "hacker", "coder", "programmer", "developer", "designer", "creator",
+                "builder", "maker", "crafter", "miner", "farmer", "trader", "warrior", "mage", "archer",
+                "tank", "healer", "support", "carry", "jungler", "mid", "top", "adc", "support",
+
+                // Titles/Ranks
+                "master", "lord", "king", "prince", "duke", "baron", "knight", "paladin", "crusader",
+                "champion", "hero", "villain", "boss", "chief", "captain", "general", "admiral",
+                "commander", "sergeant", "rookie", "veteran", "elite", "pro", "noob", "newbie",
+
+                // Mythical/Fantasy
+                "dragon", "phoenix", "unicorn", "griffin", "kraken", "hydra", "sphinx", "minotaur",
+                "centaur", "pegasus", "demon", "angel", "spirit", "ghost", "phantom", "wraith",
+                "vampire", "werewolf", "zombie", "witch", "wizard", "sorcerer", "warlock", "shaman",
+
+                // Characteristics/Adjectives
+                "kuat", "lemah", "pintar", "bodoh", "cepat", "lambat", "besar", "kecil", "tinggi", "pendek",
+                "ganteng", "jelek", "cantik", "buruk", "baik", "jahat", "berani", "penakut", "rajin", "malas",
+                "keren", "norak", "gaul", "jadul", "modern", "klasik", "epic", "fail", "win", "lose",
+
+                // Time/Age
+                "muda", "tua", "baru", "lama", "pagi", "siang", "sore", "malam", "dini", "akhir",
+                "awal", "tengah", "kemarin", "besok", "sekarang", "dulu", "nanti", "永远", "forever",
+
+                // Numbers
+                "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
+                "sebelas", "duabelas", "tigabelas", "empat belas", "limabelas", "ratus", "ribu", "juta",
+                "milyar", "trillion", "infinity", "zero", "double", "triple", "quad", "penta", "hexa",
+
+                // Body parts
+                "mata", "hidung", "mulut", "telinga", "tangan", "kaki", "kepala", "rambut", "gigi",
+                "lidah", "jari", "kuku", "kulit", "tulang", "otot", "jantung", "otak", "soul", "heart",
+
+                // Food/Drink
+                "nasi", "mie", "roti", "kue", "permen", "coklat", "kopi", "teh", "susu", "jus",
+                "pizza", "burger", "sushi", "curry", "soup", "salad", "cake", "cookie", "candy",
+
+                // Places
+                "kota", "desa", "gunung", "laut", "sungai", "danau", "hutan", "padang", "pantai", "pulau",
+                "benua", "planet", "bintang", "galaxy", "universe", "dimension", "realm", "kingdom",
+                "empire", "nation", "world", "earth", "heaven", "hell", "paradise", "wasteland",
+
+                // Emotions
+                "senang", "sedih", "marah", "takut", "benci", "cinta", "rindu", "kangen", "bangga",
+                "malu", "kecewa", "surprised", "shocked", "amazed", "confused", "worried", "excited",
+
+                // Internet/Social Media
+                "viral", "trending", "famous", "popular", "subscriber", "follower", "like", "comment",
+                "share", "upload", "download", "stream", "live", "offline", "online", "digital",
+
+                // Random cool suffixes
+                "x", "z", "v", "killer", "destroyer", "slayer", "breaker", "maker", "hunter", "seeker",
+                "finder", "keeper", "guardian", "protector", "defender", "attacker", "striker", "fighter",
+                "rider", "walker", "runner", "jumper", "flyer", "swimmer", "climber", "crawler",
+
+                // NEW ADDITIONS:
+                // Mythical & Fantasy
+                "yokai", "oni", "kitsune", "valkyrie", "djinn", "banshee", "yeti", "siren", "baphomet",
+                "cerberus", "golem", "chimera", "leviathan", "behemoth", "wendigo", "jinn", "ifrit", "marid",
+
+                // Sci-Fi & Futuristic
+                "cyborg", "android", "hologram", "quantum", "singularity", "nebula", "cosmos", "void", "astral",
+                "stellar", "lunar", "solar", "plasma", "ion", "photon", "neutron", "exo", "mecha", "nanotech",
+
+                // Martial Arts & Combat
+                "kungfu", "taekwondo", "karate", "jiujitsu", "muaythai", "boxer", "wrestler", "samurai", "ninjutsu",
+                "kendo", "capoeira", "savate", "kravmaga", "sumo", "fencing", "gladiator", "berserker", "ronin",
+
+                // Music & Arts
+                "rock", "metal", "jazz", "blues", "punk", "emo", "rap", "hiphop", "dubstep", "techno",
+                "classic", "symphony", "opera", "ballad", "trumpet", "violin", "guitar", "drummer", "pianist",
+                "artist", "painter", "sculptor", "poet", "writer", "author", "director", "actor", "singer",
+
+                // Space & Astronomy
+                "galactic", "interstellar", "cosmic", "orbital", "comet", "asteroid", "meteor", "blackhole", "wormhole",
+                "supernova", "pulsar", "quasar", "alien", "ufo", "extraterrestrial", "mars", "jupiter", "saturn",
+
+                // Weather & Natural Phenomena
+                "typhoon", "hurricane", "blizzard", "avalanche", "earthquake", "volcano", "lightning", "thunderstorm",
+                "monsoon", "drought", "flood", "whirlwind", "tornado", "cyclone", "sunshine", "moonlight", "starlight",
+
+                // Vehicles & Machines
+                "tank", "fighterjet", "spaceship", "submarine", "motorcycle", "formula", "drift", "rally", "airship",
+                "locomotive", "helicopter", "battleship", "cruiser", "destroyer", "bomber", "stealth", "supersonic",
+
+                // Food & Drinks
+                "ramen", "sushi", "burger", "pizza", "taco", "noodle", "coffee", "milkshake", "soda", "whiskey",
+                "vodka", "tequila", "chocolate", "caramel", "vanilla", "strawberry", "banana", "mango", "durian",
+
+                // Emotions & Personality
+                "chaotic", "neutral", "evil", "good", "loyal", "rebel", "fearless", "timid", "optimist", "pessimist",
+                "introvert", "extrovert", "ambivert", "genius", "wise", "foolish", "crazy", "insane", "psycho",
+
+                // Historical & Medieval
+                "viking", "spartan", "gladiator", "knight", "paladin", "crusader", "samurai", "shogun", "ninja",
+                "pirate", "corsair", "barbarian", "pharaoh", "monarch", "emperor", "caesar", "napoleon", "alexander",
+
+                // Magic & Supernatural
+                "arcane", "mystic", "enchant", "sorcery", "witchcraft", "necromancer", "illusion", "alchemy", "runemaster",
+                "hex", "curse", "blessing", "prophet", "oracle", "seer", "diviner", "shapeshifter", "telepath",
+
+                // Jobs & Professions
+                "doctor", "engineer", "scientist", "detective", "spy", "agent", "merchant", "blacksmith", "alchemist",
+                "farmer", "fisherman", "hunter", "explorer", "archaeologist", "astronaut", "pilot", "captain", "admiral",
+
+                // Abstract Concepts
+                "destiny", "fate", "karma", "nirvana", "zen", "harmony", "balance", "justice", "freedom",
+                "wisdom", "knowledge", "power", "strength", "courage", "honor", "glory", "victory", "defeat",
+
+                // Random Cool Words
+                "vortex", "abyss", "echo", "phantom", "specter", "wraith", "reaper", "doom", "apocalypse",
+                "infinity", "eternity", "paradox", "enigma", "riddle", "mystery", "legend", "myth", "folklore"
+            ];
+            const selectedPrefix = prefix[Math.floor(Math.random() * prefix.length)];
+            const selectedSuffix = suffix[Math.floor(Math.random() * suffix.length)];
+
+            return selectedPrefix + selectedSuffix;
+        }
+
+
+        function sendRequest() {
+            const username = generateRandomUsername();
+            const url = `https://matzzxz.vercel.app/api/pterodactyl/create?username=${username}`;
+            totalRequests++;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const resultStr = JSON.stringify(data).toLowerCase();
+                    const isSuccess = resultStr.includes("success") || resultStr.includes("created") || data?.status;
+
+                    if (isSuccess) successCount++;
+                    else failedCount++;
+
+                    const logCard = document.createElement('div');
+                    logCard.className = `card ${isSuccess ? 'success' : 'failed'}`;
+                    let logText = `${isSuccess ? '✅ SUCCESS' : '❌ FAILED'} → ${username}`;
+
+                    if (isSuccess && data?.result) {
+                        const formatted = JSON.stringify(data, null, 2);
+                        const pre = document.createElement('pre');
+                        pre.style.color = '#ccc';
+                        pre.style.marginTop = '6px';
+                        pre.style.fontSize = '13px';
+                        pre.innerText = formatted;
+
+                        logCard.innerText = logText;
+                        logCard.appendChild(pre);
+                    } else {
+                        logCard.innerText = logText;
+                    }
+
+                    document.getElementById("logContainer").prepend(logCard);
+                    document.getElementById("statusLog").innerText = `Terkirim: ${url}`;
+                    updateStats();
+                })
+                .catch(error => {
+                    failedCount++;
+                    const logCard = document.createElement('div');
+                    logCard.className = "card failed";
+                    logCard.innerText = `❌ ERROR → ${username} | ${error.message}`;
+
+                    document.getElementById("logContainer").prepend(logCard);
+                    document.getElementById("statusLog").innerText = `Gagal: ${url}`;
+                    updateStats();
+                });
+        }
+
+
+        function start() {
+            const delay = parseInt(document.getElementById("delayInput").value);
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(sendRequest, Math.max(0, delay));
+            document.getElementById("statusLog").innerText = `▶️ Dimulai dengan delay ${delay}ms...`;
+        }
+
+        function stop() {
+            clearInterval(intervalId);
+            intervalId = null;
+            document.getElementById("statusLog").innerText = "⛔ Dihentikan.";
+        }
+
+        window.onload = () => {
+            const saved = localStorage.getItem("autoRequestData");
+            if (!saved) return;
+
+            const data = JSON.parse(saved);
+            if (data.running) {
+                // Tampilkan data log & stats kembali
+                Object.assign(window, data);
+                document.getElementById("logContainer").innerHTML = data.logHTML || "";
+                // Restore UI
+                document.getElementById("requestStatus").innerText = "🟢 Sending request";
+                document.getElementById("statusLog").innerText = "▶️ Dilanjutkan...";
+                // Lanjutkan interval
+                intervalId = setInterval(sendRequest, parseInt(document.getElementById("delayInput").value));
+                // Mulai timer durasi
+                setInterval(updateElapsedTime, 1000);
+                updateStats();
+            }
+
+            localStorage.setItem("autoRequestData", JSON.stringify({
+                running: true / false,
+                startedAt: timestamp,
+                total: n,
+                success: n,
+                failed: n,
+                totalResponseTime: ms,
+                maxResponseTime: ms,
+                minResponseTime: ms,
+                lastUsername: "xxx",
+                logHTML: document.getElementById("logContainer").innerHTML
+            }))
+
+        };
+
+    </script>
+</body>
+
+</html>
